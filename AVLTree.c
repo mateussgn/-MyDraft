@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DONT_FIND
+#define TAM 200000
 
 //montar avore AVL depois percorrer a partir do menor valor em um nó até achar o nó procurado
 //e retornar o indice desse nó caso ele estivesse em uma lista ordenada crescentemente
@@ -9,12 +9,13 @@
 typedef struct node {
     int key_node;
     int height;
+    int index;
     struct node *left_node;
     struct node *right_node;
 } TREE_NODE;
 
-TREE_NODE *create_node(TREE_NODE *new_node, int key){
-    new_node = (TREE_NODE *) malloc (sizeof(TREE_NODE));
+TREE_NODE *create_node(int key){
+    TREE_NODE *new_node = (TREE_NODE *) malloc (sizeof(TREE_NODE));
     new_node->key_node = key;
     new_node->left_node = NULL;
     new_node->right_node = NULL;
@@ -62,15 +63,24 @@ TREE_NODE *leftRotate(TREE_NODE *root){
     return right;
 }
 
+int indexingThree(TREE_NODE *root, int oredering[], int i){
+    if(root != NULL){
+        i = indexingThree(root->left_node, i);
+        i++;
+        root->index = i;
+        i = indexingThree(root->right_node, i);
+    }
+    return i;
+}
+
 TREE_NODE *AVL_insert_node(TREE_NODE *root, int key){
     int balance_factor = 0;
-    if(root == NULL){
-        return create_node(root, key);
-    }else if(root->key_node > key   )
+    if(root == NULL)
+        return create_node(key);
+    if(root->key_node > key   )
         root->left_node = AVL_insert_node(root->left_node, key);
     else
         root->right_node = AVL_insert_node(root->right_node, key);
-
     root->height = 1 + max_height(height(root->left_node), height(root->right_node));
     balance_factor = balanceAVL(root);
     if((balance_factor > 1) && (key < root->left_node->key_node))
@@ -88,41 +98,34 @@ TREE_NODE *AVL_insert_node(TREE_NODE *root, int key){
     return root;
 }
 
-int searchInAscendentOrderThree(TREE_NODE *root, int querie, int i){
-    int j = 0;
+int searchElement(TREE_NODE *root, int key){
     if(root != NULL){
-        i = searchInAscendentOrderThree(root->left_node, querie, i);
-        if(i != 0)
-            j++;
-        if(root->key_node == querie)
-            return  j;
-        //in[i] = root->key_node;
-        i = searchInAscendentOrderThree(root->right_node, querie, i);
-        if(i != 0)
-            j++;
-        if(root->key_node == querie)
-            return  j;
+        if(root->key_node == key)
+            return root->index;
+        else if(root->key_node < key)
+            return searchElement(root->left_node, key);
+        else
+            return searchElement(root->right_node, key);
     }
-    return j;
+    return 0;
 }
 
 int main() {
     int i = 0, index = 0,
-        number_of_queries = 0,
-        include1_search2 = 0,
-        values[] = {0};
+            number_of_queries = 0,
+            include1_search2 = 0,
+            values[TAM] = {0};
     TREE_NODE *root_node = NULL;
 
     scanf("%d", &number_of_queries);
     for(i = 0; i < number_of_queries; i++){
         scanf("%d %d", &include1_search2, &values[i]);
-        if(include1_search2 == 1){
-            //inserir values[i] na arvore avl
+        if(include1_search2 == 1){ //inserir values[i] na arvore avl
             root_node = AVL_insert_node(root_node, values[i]);
-        } else{
-            //procurar valor na arvore avl
-            index = searchInAscendentOrderThree(root_node, values[i], index);
-            if(index > number_of_queries || index < 1)
+        }else{ //procurar valor na arvore avl
+            indexingThree(root_node, 0);
+            index = searchElement(root_node, values[i]);
+            if(index == 0)
                 printf("Data tidak ada\n");
             else
                 printf("%d\n", index);
